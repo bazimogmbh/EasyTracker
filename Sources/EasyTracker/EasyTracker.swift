@@ -121,7 +121,7 @@ public enum EasyTracker: TrackServiceProtocol {
 
 extension EasyTracker {
     static private func send(_ dictionary: [String: String], to endpoint: TrackerEndpoint) {
-        if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
+        if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: .prettyPrinted),
            let string = String(data: jsonData, encoding: .utf8) {
             print("ANALITIC \(endpoint.rawValue):\n\(string)")
         }
