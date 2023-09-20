@@ -77,22 +77,28 @@ public enum EasyTracker: TrackServiceProtocol {
         }
     }
 
-    public static func trackPurchase(of product: SKProduct) {
-        //       let receipt = detail.transaction.transactionReceipt
-        // email
-        // encription needed
+    public static func trackPurchase(of product: SKProduct, with orderId: String) {
+        var purchaseToken = ""
+        
+        if let url = Bundle.main.appStoreReceiptURL,
+           let data = try? Data(contentsOf: url) {
+            purchaseToken = data.base64EncodedString()
+  
+        }
+//               let receipt = detail.transaction.transactionReceipt
+//         encription needed
 
-        //        let data: [String: String] = [
-        //            TrackingKey.userId.rawValue: self.userId,
-        //            TrackingKey.productId.rawValue: detail.productId,
-        //            TrackingKey.localizedPrice.rawValue: detail.product.localizedPrice ?? "",
-        //            TrackingKey.price.rawValue: detail.product.price.stringValue,
-        //            TrackingKey.currency.rawValue: detail.product.priceLocale.currencyCode ?? "",
-        //            TrackingKey.purchaseToken.rawValue: "",
-        //            TrackingKey.orderId.rawValue: "",
-        //        ]
-        //
-        //        print("ANALITIC: \(data)")
+        let data: [String: String] = [
+            TrackingKey.userId.rawValue: self.userId,
+            TrackingKey.productId.rawValue: detail.productId,
+            TrackingKey.localizedPrice.rawValue: detail.product.localizedPrice ?? "",
+            TrackingKey.price.rawValue: detail.product.price.stringValue,
+            TrackingKey.currency.rawValue: detail.product.priceLocale.currencyCode ?? "",
+            TrackingKey.purchaseToken.rawValue: purchaseToken,
+            TrackingKey.orderId.rawValue: orderId,
+        ]
+        
+        print("ANALITIC: \(data)")
     }
 
     static private func setupUserId() {
