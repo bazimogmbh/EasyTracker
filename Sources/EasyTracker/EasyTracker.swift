@@ -68,12 +68,7 @@ public enum EasyTracker: TrackServiceProtocol {
             let locale = Locale.current
             let appLocale = locale.identifier
             let enLocale = Locale(identifier: "en_US")
-            var country: String = ""
-
-            if let countryCode = locale.language.region?.identifier,
-               let countryString = enLocale.localizedString(forRegionCode: countryCode) {
-                country = countryString
-            }
+            var country: String = locale.countryInEnglish
 
             let data: [String: String] = [
                 TrackingKey.bundleId.rawValue: bundleId,
@@ -156,6 +151,25 @@ fileprivate extension Bundle {
 
     var appVersion: String {
         object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Could not determine the application version"
+    }
+}
+
+fileprivate extension Locale {
+    var countryInEnglish: String? {
+        let countryCode = {
+            if #available(iOS 16, *) {
+                return self.language.region?.identifier
+            } else {
+                return self.regionCode
+            }
+        }()
+                
+        if let countryCode,
+           let countryString = Locale(identifier: "en_US").localizedString(forRegionCode: countryCode) {
+            return countryString
+        }
+        
+        return nil
     }
 }
 
