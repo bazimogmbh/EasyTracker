@@ -78,7 +78,7 @@ public enum EasyTracker: TrackServiceProtocol {
                 TrackingKey.trackVersion.rawValue: trackVersion,
             ]
 
-            send(data, by: .configure)
+            send(data, to: .configure)
         }
     }
 
@@ -100,7 +100,7 @@ public enum EasyTracker: TrackServiceProtocol {
             TrackingKey.orderId.rawValue: orderId ?? "",
         ]
         
-        send(data, by: .trackPurchase)
+        send(data, to: .trackPurchase)
     }
     
     public static func trackAllPurchases() {
@@ -113,7 +113,7 @@ public enum EasyTracker: TrackServiceProtocol {
 //            TrackingKey.orderId.rawValue: orderId ?? "",
         ]
         
-        send(data, by: .trackAllPurchases)
+        send(data, to: .trackAllPurchases)
     }
 }
 
