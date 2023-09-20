@@ -155,7 +155,7 @@ fileprivate extension Bundle {
 }
 
 fileprivate extension Locale {
-    var countryInEnglish: String? {
+    var countryInEnglish: String {
         let countryCode = {
             if #available(iOS 16, *) {
                 return self.language.region?.identifier
@@ -169,7 +169,7 @@ fileprivate extension Locale {
             return countryString
         }
         
-        return nil
+        return ""
     }
 }
 
