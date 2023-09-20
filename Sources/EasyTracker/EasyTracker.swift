@@ -1,5 +1,5 @@
 import Foundation
-//import AppTrackingTransparency
+import AppTrackingTransparency
 //import AdSupport
 //import Network
 //import SwiftyStoreKit

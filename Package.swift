@@ -15,6 +15,7 @@ let package = Package(
             targets: ["EasyTracker"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-app-tracking-transparency.git", from: "2.0.0"),
 //        .package(url: "https://github.com/apple/swift-corelibs-foundation.git", branch: "main"),
     ],
     targets: [
