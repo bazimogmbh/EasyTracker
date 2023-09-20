@@ -38,7 +38,7 @@ public enum EasyTracker: TrackServiceProtocol {
 //       }
 
 
-    static func configure() {
+    public static func configure() {
         setupUserId()
         sendData()
 
@@ -92,7 +92,7 @@ public enum EasyTracker: TrackServiceProtocol {
         }
     }
 
-    static func trackPurchase(detail: String) {
+    public static func trackPurchase(detail: String) {
         //       let receipt = detail.transaction.transactionReceipt
         // email
         // encription needed
