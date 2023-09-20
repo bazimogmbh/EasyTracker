@@ -4,6 +4,9 @@ import Foundation
 //import Network
 //import SwiftyStoreKit
 
+#if canImport(UIKit)
+import UIKit
+
 protocol TrackServiceProtocol {
     static func configure()
     static func trackPurchase(detail: String)
@@ -52,40 +55,40 @@ public enum EasyTracker: TrackServiceProtocol {
         func sendData() {
 //            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
 //            self.idfa = idfa
-//
-//            let vendorID = UIDevice.current.identifierForVendor?.uuidString ?? ""
-//            self.vendorID = vendorID
-//
-//            let bundleId = Bundle.main.bundleIdentifier ?? ""
-//            let appBuild = Bundle.main.appBuild
-//            let appVersion = Bundle.main.appVersion
-//            let device = UIDevice.current.modelName
-//            let iosVersion = UIDevice.current.systemVersion
-//
-//            let locale = Locale.current
-//            let appLocale = locale.identifier
-//            let enLocale = Locale(identifier: "en_US")
-//            var country: String = ""
-//
-//            if let countryCode = locale.language.region?.identifier,
-//               let countryString = enLocale.localizedString(forRegionCode: countryCode) {
-//                country = countryString
-//            }
-//
-//            let data: [String: String] = [
-//                TrackingKey.bundleId.rawValue: bundleId,
-//                TrackingKey.userId.rawValue: self.userId,
-//                TrackingKey.idfa.rawValue: idfa,
-//                TrackingKey.vendorID.rawValue: vendorID,
-//                TrackingKey.appVersion.rawValue: appVersion,
-//                TrackingKey.appBuild.rawValue: appBuild,
-//                TrackingKey.iosVersion.rawValue: iosVersion,
-//                TrackingKey.device.rawValue: device,
-//                TrackingKey.appLocale.rawValue: appLocale,
-//                TrackingKey.country.rawValue: country,
-//            ]
-//
-//            print("ANALITIC: \(data)")
+
+            let vendorID = UIDevice.current.identifierForVendor?.uuidString ?? ""
+            self.vendorID = vendorID
+
+            let bundleId = Bundle.main.bundleIdentifier ?? ""
+            let appBuild = Bundle.main.appBuild
+            let appVersion = Bundle.main.appVersion
+            let device = UIDevice.current.modelName
+            let iosVersion = UIDevice.current.systemVersion
+
+            let locale = Locale.current
+            let appLocale = locale.identifier
+            let enLocale = Locale(identifier: "en_US")
+            var country: String = ""
+
+            if let countryCode = locale.language.region?.identifier,
+               let countryString = enLocale.localizedString(forRegionCode: countryCode) {
+                country = countryString
+            }
+
+            let data: [String: String] = [
+                TrackingKey.bundleId.rawValue: bundleId,
+                TrackingKey.userId.rawValue: self.userId,
+                TrackingKey.idfa.rawValue: idfa,
+                TrackingKey.vendorID.rawValue: vendorID,
+                TrackingKey.appVersion.rawValue: appVersion,
+                TrackingKey.appBuild.rawValue: appBuild,
+                TrackingKey.iosVersion.rawValue: iosVersion,
+                TrackingKey.device.rawValue: device,
+                TrackingKey.appLocale.rawValue: appLocale,
+                TrackingKey.country.rawValue: country,
+            ]
+
+            print("ANALITIC: \(data)")
         }
     }
 
@@ -124,35 +127,36 @@ public enum EasyTracker: TrackServiceProtocol {
         return UserDefaults.standard.value(forKey: key.rawValue) as? T
     }
 }
-//
-//fileprivate extension UIDevice {
-//    var modelName: String {
-//#if targetEnvironment(simulator)
-//        let identifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"]!
-//#else
-//        var systemInfo = utsname()
-//        uname(&systemInfo)
-//        let machineMirror = Mirror(reflecting: systemInfo.machine)
-//        let identifier = machineMirror.children.reduce("") { identifier, element in
-//            guard let value = element.value as? Int8, value != 0 else { return identifier }
-//            return identifier + String(UnicodeScalar(UInt8(value)))
-//        }
-//#endif
-//        return identifier
-//    }
-//}
-//
-//fileprivate extension Bundle {
-//    var displayName: String {
-//        object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Could not determine the application name"
-//    }
-//
-//    var appBuild: String {
-//        object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Could not determine the application build number"
-//    }
-//
-//    var appVersion: String {
-//        object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Could not determine the application version"
-//    }
-//}
-//
+
+fileprivate extension UIDevice {
+    var modelName: String {
+#if targetEnvironment(simulator)
+        let identifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"]!
+#else
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+#endif
+        return identifier
+    }
+}
+
+fileprivate extension Bundle {
+    var displayName: String {
+        object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Could not determine the application name"
+    }
+
+    var appBuild: String {
+        object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Could not determine the application build number"
+    }
+
+    var appVersion: String {
+        object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Could not determine the application version"
+    }
+}
+
+#endif
