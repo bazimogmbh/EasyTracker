@@ -1,7 +1,7 @@
 import Foundation
 import AppTrackingTransparency
-//import AdSupport
-//import Network
+import AdSupport
+import Network
 //import SwiftyStoreKit
 
 #if canImport(UIKit)
@@ -42,8 +42,8 @@ public enum EasyTracker: TrackServiceProtocol {
         }
 
         func sendData() {
-//            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-//            self.idfa = idfa
+            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+            self.idfa = idfa
 
             let vendorID = UIDevice.current.identifierForVendor?.uuidString ?? ""
             self.vendorID = vendorID
