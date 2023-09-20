@@ -104,16 +104,16 @@ public enum EasyTracker: TrackServiceProtocol {
     }
     
     public static func trackAllPurchases() {
-        let data: [String: String] = [
+//        let data: [String: String] = [
 //            TrackingKey.userId.rawValue: self.userId,
 //            TrackingKey.productId.rawValue: product.productIdentifier,
 //            TrackingKey.price.rawValue: product.price.stringValue,
 //            TrackingKey.currency.rawValue: product.priceLocale.currencyCode ?? "",
 //            TrackingKey.receipt.rawValue: receipt,
 //            TrackingKey.orderId.rawValue: orderId ?? "",
-        ]
+//        ]
         
-        send(data, to: .trackAllPurchases)
+//        send(data, to: .trackAllPurchases)
     }
 }
 
