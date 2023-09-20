@@ -1,12 +1,22 @@
-import Foundation
+public struct EasyTracker {
+    public private(set) var text = "Hello, World!"
 
-public enum EasyTracker {
-    public static func configure() {
-        
+    public init() {
     }
 }
 
 
+//
+//
+//import Foundation
+//
+//public enum EasyTracker {
+//    public static func configure() {
+//        
+//    }
+//}
+//
+//
 
 //import AppTrackingTransparency
 //import AdSupport
