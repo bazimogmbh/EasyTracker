@@ -12,7 +12,7 @@ let package = Package(
             targets: ["EasyTracker"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-corelibs-foundation.git", branch: "main"),
+//        .package(url: "https://github.com/apple/swift-corelibs-foundation.git", branch: "main"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "EasyTracker",
             dependencies: [
-                .product(name: "Foundation", package: "swift-corelibs-foundation"), // UIKit depends
+//                .product(name: "Foundation", package: "swift-corelibs-foundation"), // UIKit depends
             ]),
         .testTarget(
             name: "EasyTrackerTests",
