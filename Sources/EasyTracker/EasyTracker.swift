@@ -18,10 +18,12 @@ enum DefaultsKey: String {
 
 public enum EasyTracker: TrackServiceProtocol {
     enum TrackingKey: String {
-        case userId, idfa, vendorID, appName, appVersion, appBuild, appLocale, country, iosVersion, device, bundleId, appId
+        case userId, idfa, vendorID, appName, appVersion, appBuild, appLocale, country, iosVersion, device, bundleId, trackVersion
         case localizedPrice, price, currency, productId, purchaseToken, orderId
     }
 
+    private static let trackVersion = "0.0.18"
+    
     private static var userId: String = ""
     private static var idfa: String = ""
     private static var vendorID: String = ""
@@ -68,6 +70,7 @@ public enum EasyTracker: TrackServiceProtocol {
                 TrackingKey.device.rawValue: device,
                 TrackingKey.appLocale.rawValue: appLocale,
                 TrackingKey.country.rawValue: country,
+                TrackingKey.trackVersion.rawValue: trackVersion,
             ]
 
             print("ANALITIC: \(data)")
