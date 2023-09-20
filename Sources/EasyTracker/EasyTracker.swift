@@ -9,7 +9,7 @@ import UIKit
 
 protocol TrackServiceProtocol {
     static func configure()
-    static func trackPurchase(of product: SKProduct)
+    static func trackPurchase(of product: SKProduct, with orderId: String?)
 }
 
 enum DefaultsKey: String {
@@ -77,7 +77,7 @@ public enum EasyTracker: TrackServiceProtocol {
         }
     }
 
-    public static func trackPurchase(of product: SKProduct, with orderId: String) {
+    public static func trackPurchase(of product: SKProduct, with orderId: String?) {
         var purchaseToken = ""
         
         if let url = Bundle.main.appStoreReceiptURL,
@@ -95,7 +95,7 @@ public enum EasyTracker: TrackServiceProtocol {
             TrackingKey.price.rawValue: detail.product.price.stringValue,
             TrackingKey.currency.rawValue: detail.product.priceLocale.currencyCode ?? "",
             TrackingKey.purchaseToken.rawValue: purchaseToken,
-            TrackingKey.orderId.rawValue: orderId,
+            TrackingKey.orderId.rawValue: orderId ?? "",
         ]
         
         print("ANALITIC: \(data)")
