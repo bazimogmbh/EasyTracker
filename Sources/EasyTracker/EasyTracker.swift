@@ -10,6 +10,7 @@ import UIKit
 protocol TrackServiceProtocol {
     static func configure()
     static func trackPurchase(of product: SKProduct, with orderId: String?)
+    static func trackAllPurchases()
 }
 
 enum DefaultsKey: String {
@@ -19,7 +20,11 @@ enum DefaultsKey: String {
 public enum EasyTracker: TrackServiceProtocol {
     enum TrackingKey: String {
         case userId, idfa, vendorID, appName, appVersion, appBuild, appLocale, country, iosVersion, device, bundleId, trackVersion
-        case localizedPrice, price, currency, productId, purchaseToken, orderId
+        case price, currency, productId, receipt, orderId
+    }
+    
+    enum TrackerEndpoint: String {
+        case configure, trackPurchase, trackAllPurchases
     }
 
     private static let trackVersion = "0.0.18"
@@ -73,34 +78,55 @@ public enum EasyTracker: TrackServiceProtocol {
                 TrackingKey.trackVersion.rawValue: trackVersion,
             ]
 
-            print("ANALITIC: \(data)")
+            send(data, by: .configure)
         }
     }
 
     public static func trackPurchase(of product: SKProduct, with orderId: String?) {
-        var purchaseToken = ""
+        var receipt = ""
         
         if let url = Bundle.main.appStoreReceiptURL,
            let data = try? Data(contentsOf: url) {
-            purchaseToken = data.base64EncodedString()
+            receipt = data.base64EncodedString()
   
         }
-//               let receipt = detail.transaction.transactionReceipt
-//         encription needed
 
         let data: [String: String] = [
             TrackingKey.userId.rawValue: self.userId,
             TrackingKey.productId.rawValue: product.productIdentifier,
-//            TrackingKey.localizedPrice.rawValue: product.localizedPrice ?? "",
             TrackingKey.price.rawValue: product.price.stringValue,
             TrackingKey.currency.rawValue: product.priceLocale.currencyCode ?? "",
-            TrackingKey.purchaseToken.rawValue: purchaseToken,
+            TrackingKey.receipt.rawValue: receipt,
             TrackingKey.orderId.rawValue: orderId ?? "",
         ]
         
-        print("ANALITIC: \(data)")
+        send(data, by: .trackPurchase)
     }
+    
+    public static func trackAllPurchases() {
+        let data: [String: String] = [
+//            TrackingKey.userId.rawValue: self.userId,
+//            TrackingKey.productId.rawValue: product.productIdentifier,
+//            TrackingKey.price.rawValue: product.price.stringValue,
+//            TrackingKey.currency.rawValue: product.priceLocale.currencyCode ?? "",
+//            TrackingKey.receipt.rawValue: receipt,
+//            TrackingKey.orderId.rawValue: orderId ?? "",
+        ]
+        
+        send(data, by: .trackAllPurchases)
+    }
+}
 
+// MARK: - Helpers
+
+extension EasyTracker {
+    static private func send(_ dictionary: [String: String], to endpoint: TrackerEndpoint) {
+        if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: []),
+           let string = String(data: jsonData, encoding: .utf8) {
+            print("ANALITIC \(endpoint.rawValue):\n\(string)")
+        }
+    }
+    
     static private func setupUserId() {
         if let userId: String = getFromDefaults(.userId) {
             self.userId = userId
@@ -159,7 +185,7 @@ fileprivate extension Locale {
                 return self.regionCode
             }
         }()
-                
+        
         if let countryCode,
            let countryString = Locale(identifier: "en_US").localizedString(forRegionCode: countryCode) {
             return countryString
