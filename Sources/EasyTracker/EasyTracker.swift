@@ -91,7 +91,7 @@ public enum EasyTracker: TrackServiceProtocol {
         let data: [String: String] = [
             TrackingKey.userId.rawValue: self.userId,
             TrackingKey.productId.rawValue: product.productIdentifier,
-            TrackingKey.localizedPrice.rawValue: product.localizedPrice ?? "",
+//            TrackingKey.localizedPrice.rawValue: product.localizedPrice ?? "",
             TrackingKey.price.rawValue: product.price.stringValue,
             TrackingKey.currency.rawValue: product.priceLocale.currencyCode ?? "",
             TrackingKey.purchaseToken.rawValue: purchaseToken,
