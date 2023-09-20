@@ -2,14 +2,14 @@ import Foundation
 import AppTrackingTransparency
 import AdSupport
 import Network
-//import SwiftyStoreKit
+import StoreKit
 
 #if canImport(UIKit)
 import UIKit
 
 protocol TrackServiceProtocol {
     static func configure()
-    static func trackPurchase(detail: String)
+    static func trackPurchase(of product: SKProduct)
 }
 
 enum DefaultsKey: String {
@@ -77,7 +77,7 @@ public enum EasyTracker: TrackServiceProtocol {
         }
     }
 
-    public static func trackPurchase(detail: String) {
+    public static func trackPurchase(of product: SKProduct) {
         //       let receipt = detail.transaction.transactionReceipt
         // email
         // encription needed
