@@ -20,6 +20,7 @@ let package = Package(
         .target(
             name: "EasyTracker",
             dependencies: [
+                "EasyTracker",
 //                .product(name: "Foundation", package: "swift-corelibs-foundation"), // UIKit depends
             ]),
         .testTarget(
