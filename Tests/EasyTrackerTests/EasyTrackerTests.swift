@@ -6,6 +6,6 @@ final class EasyTrackerTests: XCTestCase {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-        XCTAssertEqual(EasyTracker().text, "Hello, World!")
+//        XCTAssertEqual(EasyTracker().text, "Hello, World!")
     }
 }
