@@ -26,31 +26,18 @@ public enum EasyTracker: TrackServiceProtocol {
     private static var idfa: String = ""
     private static var vendorID: String = ""
 
-//    static func addObserver() {
-//           observerToken = NotificationCenter.default.addObserver(
-//               forName: UIApplication.didBecomeActiveNotification,
-//               object: nil,
-//               queue: nil
-//           ) { _ in
-//               // Handle the didBecomeActiveNotification here
-//               // You can perform actions here when the app becomes active
-//           }
-//       }
-
-
     public static func configure() {
         setupUserId()
-        sendData()
-
-//        let observerToken = NotificationCenter.default.addObserver(
-//            forName: UIApplication.didBecomeActiveNotification,
-//            object: nil,
-//            queue: nil
-//        ) { _ in
-//            ATTrackingManager.requestTrackingAuthorization { status in
-//                sendData()
-//            }
-//        }
+        
+        let observerToken = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: nil
+        ) { _ in
+            ATTrackingManager.requestTrackingAuthorization { status in
+                sendData()
+            }
+        }
 
         func sendData() {
 //            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
