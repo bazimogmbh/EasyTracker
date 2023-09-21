@@ -9,36 +9,57 @@ import SwiftyStoreKit
 import UIKit
 
 protocol TrackServiceProtocol {
-    static func configure()
-    static func trackPurchase(of product: SKProduct, with orderId: String?)
+    static func configure(with appstoreId: String)
+    static func trackPurchase(_ details: PurchaseDetails)
     static func updatePurchases(of products: Set<SKProduct>)
 }
 
 enum DefaultsKey: String {
-    case userId
+    case appUserId
     case isFirstRun
 }
 
+struct UserSetups: DictionaryConvertable {
+    let appBundleId: String
+    let appUserId: String
+    let idfa: String
+    let vendorId: String
+    let appVersion: String
+    let appstoreId: String
+    let iosVersion: String
+    let device: String
+    let locale: String
+    let countryCode: String
+}
+
+struct PurchaseDetail: DictionaryConvertable {
+    let appUserId: String
+    let productId: String
+    let transactionId: String
+    let token: String
+    let priceInPurchasedCurrency: String
+    let currency: String
+    let purchasedAtMs: String
+    let expirationAtMs: String
+    let environment: String
+    let type: String
+}
+
+struct AllPurchaseDetail: DictionaryConvertable {
+    let purchases: [PurchaseDetail]
+}
+
 public enum EasyTracker: TrackServiceProtocol {
-    enum TrackingKey: String {
-        case userId, idfa, vendorID, appName, appVersion, appBuild, appLocale, country, iosVersion, device, bundleId, trackVersion
-        case price, currency, productId, receipt, orderId
-    }
-    
     enum TrackerEndpoint: String {
         case configure, trackPurchase, trackAllPurchases
     }
     
-    private static var userId: String = ""
+    private static let appUserId: String = getUserId()
     private static var idfa: String = ""
-    private static var vendorID: String = ""
-    
-    private static let trackVersion = "0.0.18"
+    private static var vendorId: String = ""
 
-    public static func configure() {
-        setupUserId()
-        
-        let observerToken = NotificationCenter.default.addObserver(
+    public static func configure(with appstoreId: String) {
+       NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
             object: nil,
             queue: nil
@@ -52,88 +73,126 @@ public enum EasyTracker: TrackServiceProtocol {
             let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
             self.idfa = idfa
 
-            let vendorID = UIDevice.current.identifierForVendor?.uuidString ?? ""
-            self.vendorID = vendorID
+            let vendorId = UIDevice.current.identifierForVendor?.uuidString ?? ""
+            self.vendorId = vendorId
 
-            let bundleId = Bundle.main.bundleIdentifier ?? ""
-            let appBuild = Bundle.main.appBuild
+            let appBundleId = Bundle.main.bundleIdentifier ?? ""
             let appVersion = Bundle.main.appVersion
             let device = UIDevice.current.modelName
             let iosVersion = UIDevice.current.systemVersion
 
-            let locale = Locale.current
-            let appLocale = locale.identifier
-            let enLocale = Locale(identifier: "en_US")
-            var country: String = locale.countryInEnglish
+            let locale = Locale.current.identifier
+            let countryCode: String = Locale.current.countryCode
+            
+            let userSetups = UserSetups(appBundleId: appBundleId,
+                                        appUserId: self.appUserId,
+                                        idfa: idfa,
+                                        vendorId: vendorId,
+                                        appVersion: appVersion,
+                                        appstoreId: appstoreId,
+                                        iosVersion: iosVersion,
+                                        device: device,
+                                        locale: locale,
+                                        countryCode: countryCode
+            )
 
-            let data: [String: String] = [
-                TrackingKey.bundleId.rawValue: bundleId,
-                TrackingKey.userId.rawValue: self.userId,
-                TrackingKey.idfa.rawValue: idfa,
-                TrackingKey.vendorID.rawValue: vendorID,
-                TrackingKey.appVersion.rawValue: appVersion,
-                TrackingKey.appBuild.rawValue: appBuild,
-                TrackingKey.iosVersion.rawValue: iosVersion,
-                TrackingKey.device.rawValue: device,
-                TrackingKey.appLocale.rawValue: appLocale,
-                TrackingKey.country.rawValue: country,
-                TrackingKey.trackVersion.rawValue: trackVersion,
-            ]
-
-            send(data, to: .configure)
+            send(userSetups, to: .configure)
         }
     }
 
-    public static func trackPurchase(of product: SKProduct, with orderId: String?) {
-        var receipt = ""
+    public static func trackPurchase(_ details: PurchaseDetails) {
+        var token = ""
         
         if let url = Bundle.main.appStoreReceiptURL,
            let data = try? Data(contentsOf: url) {
-            receipt = data.base64EncodedString()
+            token = data.base64EncodedString()
   
         }
-
-        let data: [String: String] = [
-            TrackingKey.userId.rawValue: self.userId,
-            TrackingKey.productId.rawValue: product.productIdentifier,
-            TrackingKey.price.rawValue: product.price.stringValue,
-            TrackingKey.currency.rawValue: product.priceLocale.currencyCode ?? "",
-            TrackingKey.receipt.rawValue: receipt,
-            TrackingKey.orderId.rawValue: orderId ?? "",
-        ]
         
-        send(data, to: .trackPurchase)
+        let productId = details.product.productIdentifier
+        let transactionId = details.transaction.transactionIdentifier ?? ""
+        let priceInPurchasedCurrency = details.product.price.stringValue
+        let currency = details.product.priceLocale.currencyCode ?? ""
+        let purchasedAtMs = String(details.originalPurchaseDate.milliseconds)
+        let expirationAtMs = String(details.originalPurchaseDate.milliseconds + (details.product.subscriptionPeriod?.milliseconds ?? 0))
+        let environment = "NOT SET"
+        let type = "NOT SET"
+        
+        let purchaseDetail = PurchaseDetail(appUserId: self.appUserId,
+                       productId: productId,
+                       transactionId: transactionId,
+                       token: token,
+                       priceInPurchasedCurrency: priceInPurchasedCurrency,
+                       currency: currency,
+                       purchasedAtMs: purchasedAtMs,
+                       expirationAtMs: expirationAtMs,
+                       environment: environment,
+                       type: type
+        )
+
+        send(purchaseDetail, to: .trackPurchase)
     }
     
     public static func updatePurchases(of products: Set<SKProduct>) {
         let isFirstRun: Bool = getFromDefaults(.isFirstRun) ?? true
-        
+        print("!@ANALITIC Old Purchases prepeare: \(isFirstRun)")
 //        if isFirstRun {
-        print("!@ANALITIC Old Purchases start")
-            SwiftyStoreKit.restorePurchases(atomically: true) { results in
-                saveInDefaults(false, by: .isFirstRun)
-                print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) { // need to restorePurchases work correct
+                print("!@ANALITIC Old Purchases start")
+                
+                SwiftyStoreKit.restorePurchases { results in
+                    saveInDefaults(false, by: .isFirstRun)
+                    print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
+                    
+                    let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
+                        let product = product(by: purchase.productId)
+                        
+                        return PurchaseDetail(appUserId: self.appUserId,
+                                              productId: purchase.productId,
+                                              transactionId: purchase.originalTransaction?.transactionIdentifier ?? "",
+                                              token: "NOT SET",
+                                              priceInPurchasedCurrency: product?.price.stringValue ?? "",
+                                              currency: product?.priceLocale.currencyCode ?? "",
+                                              purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
+                                              expirationAtMs: String(purchase.originalPurchaseDate.milliseconds + ( product?.subscriptionPeriod?.milliseconds ?? 0)),
+                                              environment: "NOT SET",
+                                              type: "NOT SET"
+                        )
+                    }
+                    )
+                    
+                    send(allPurchaseDetail, to: .trackAllPurchases)
+                }
             }
 //        }
+        
+        func product(by productId: String) -> SKProduct? {
+            products.first(where: { $0.productIdentifier == productId })
+        }
     }
 }
 
 // MARK: - Helpers
 
 extension EasyTracker {
-    static private func send(_ dictionary: [String: String], to endpoint: TrackerEndpoint) {
+    static private func send<T: DictionaryConvertable>(_ data: T, to endpoint: TrackerEndpoint) {
+        let dictionary = data.toDictionary()
+        
         if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: .prettyPrinted),
            let string = String(data: jsonData, encoding: .utf8) {
-            print("ANALITIC \(endpoint.rawValue):\n\(string)")
+
+            print("ANALITIC \(endpoint.rawValue):\n\(string.utf8)")
         }
     }
     
-    static private func setupUserId() {
-        if let userId: String = getFromDefaults(.userId) {
-            self.userId = userId
+    static private func getUserId() -> String {
+        if let appUserId: String = getFromDefaults(.appUserId) {
+           return appUserId
         } else {
-            self.userId = "\(UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased())"
-            self.saveInDefaults(self.userId, by: .userId)
+            let appUserId = "\(UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased())"
+            self.saveInDefaults(appUserId, by: .appUserId)
+            self.saveInDefaults(true, by: .isFirstRun)
+            return appUserId
         }
     }
 
@@ -143,6 +202,34 @@ extension EasyTracker {
 
     static private func getFromDefaults<T>(_ key: DefaultsKey) -> T? {
         return UserDefaults.standard.value(forKey: key.rawValue) as? T
+    }
+}
+
+fileprivate extension Date {
+    var milliseconds: Int64 {
+        Int64(self.timeIntervalSince1970 * 1000)
+    }
+}
+
+fileprivate extension SKProductSubscriptionPeriod {
+    var milliseconds: Int64 {
+        let milisecondsInDay: Double = 24 * 60 * 60 * 1000
+        var result: Double = 0
+        
+        switch self.unit {
+        case .day:
+            result = TimeInterval(self.numberOfUnits) * milisecondsInDay
+        case .week:
+            result = TimeInterval(self.numberOfUnits) * 7 * milisecondsInDay
+        case .month:
+            result = TimeInterval(self.numberOfUnits) * 30 * milisecondsInDay
+        case .year:
+            result = TimeInterval(self.numberOfUnits) * 365 * milisecondsInDay
+        @unknown default:
+            result = 0
+        }
+        
+        return Int64(result)
     }
 }
 
@@ -178,22 +265,80 @@ fileprivate extension Bundle {
 }
 
 fileprivate extension Locale {
-    var countryInEnglish: String {
-        let countryCode = {
-            if #available(iOS 16, *) {
-                return self.language.region?.identifier
-            } else {
-                return self.regionCode
-            }
-        }()
-        
-        if let countryCode,
-           let countryString = Locale(identifier: "en_US").localizedString(forRegionCode: countryCode) {
-            return countryString
+    var countryCode: String {
+        if #available(iOS 16, *) {
+            return self.language.region?.identifier ?? ""
+        } else {
+            return self.regionCode  ?? ""
         }
-        
-        return ""
     }
 }
 
 #endif
+
+protocol DictionaryConvertable: DictionaryDecodable {
+    func toDictionary() -> [String: Any]
+}
+
+protocol DictionaryDecodable: Decodable {
+    static func decode(from dictionary: [AnyHashable: Any]) throws -> Self
+}
+
+extension DictionaryDecodable {
+    static func decode(from dictionary: [AnyHashable: Any]) throws -> Self {
+        let jsonData = try JSONSerialization.data(withJSONObject: dictionary, options: [])
+        let decoder = JSONDecoder()
+        let object = try decoder.decode(Self.self, from: jsonData)
+        return object
+    }
+}
+
+protocol EnumConvertable {
+    init?(rawValue: String)
+    var rawValue: String { get }
+}
+
+extension DictionaryConvertable {
+    func toDictionary() -> [String: Any] {
+        let reflect = Mirror(reflecting: self)
+        let children = reflect.children
+        let dictionary = toAnyHashable(elements: children)
+        return dictionary
+    }
+    
+    func toAnyHashable(elements: AnyCollection<Mirror.Child>) -> [String : Any] {
+        var dictionary: [String : Any] = [:]
+        for element in elements {
+            if let camelCaseKey = element.label {
+               let key = convertCamelCaseToSnakeCase(camelCaseKey)
+
+                if let collectionValidHashable = element.value as? [AnyHashable] {
+                    dictionary[key] = collectionValidHashable
+                }
+                
+                if let validHashable = element.value as? AnyHashable {
+                    dictionary[key] = validHashable
+                }
+                
+                if let convertor = element.value as? DictionaryConvertable {
+                    dictionary[key] = convertor.toDictionary()
+                }
+                
+                if let convertorList = element.value as? [DictionaryConvertable] {
+                    dictionary[key] = convertorList.map({ e in
+                       return e.toDictionary()
+                    })
+                }
+                
+                if let validEnum = element.value as? EnumConvertable {
+                    dictionary[key] = validEnum.rawValue
+                }
+            }
+        }
+        return dictionary
+        
+        func convertCamelCaseToSnakeCase(_ input: String) -> String {
+            return input.replacingOccurrences(of: "([a-z])([A-Z])", with: "$1_$2", options: .regularExpression, range: nil).lowercased()
+        }
+    }
+}
