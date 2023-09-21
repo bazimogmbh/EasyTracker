@@ -108,12 +108,13 @@ public enum EasyTracker: TrackServiceProtocol {
     public static func updatePurchases(of products: Set<SKProduct>) {
         let isFirstRun: Bool = getFromDefaults(.isFirstRun) ?? true
         
-        if isFirstRun {
+//        if isFirstRun {
+        print("!@ANALITIC Old Purchases start")
             SwiftyStoreKit.restorePurchases(atomically: true) { results in
                 saveInDefaults(false, by: .isFirstRun)
                 print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
             }
-        }
+//        }
     }
 }
 
