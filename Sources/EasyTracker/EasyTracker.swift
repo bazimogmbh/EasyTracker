@@ -11,7 +11,7 @@ import UIKit
 protocol TrackServiceProtocol {
     static func configure()
     static func trackPurchase(of product: SKProduct, with orderId: String?)
-    static func updatePurchases(of products: Set<SKProduct>, in service: SwiftyStoreKit)
+    static func updatePurchases(of products: Set<SKProduct>, completion: @escaping () -> [Purchase])
 }
 
 enum DefaultsKey: String {
@@ -105,12 +105,12 @@ public enum EasyTracker: TrackServiceProtocol {
         send(data, to: .trackPurchase)
     }
     
-    public static func updatePurchases(of products: Set<SKProduct>, in service: SwiftyStoreKit) {
+    public static func updatePurchases(of products: Set<SKProduct>, completion: @escaping () -> [Purchase]) {
         let isFirstRun: Bool = getFromDefaults(.isFirstRun) ?? true
         
         //        if isFirstRun {
         print("!@ANALITIC Old Purchases start")
-        SwiftyStoreKit.restorePurchases(atomically: true) { results in
+        completion { results in
             saveInDefaults(false, by: .isFirstRun)
             print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
         }
