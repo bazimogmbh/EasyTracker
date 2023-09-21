@@ -11,11 +11,12 @@ import UIKit
 protocol TrackServiceProtocol {
     static func configure()
     static func trackPurchase(of product: SKProduct, with orderId: String?)
-    static func trackAllPurchases()
+    static func updatePurchases(of products: Set<SKProduct>)
 }
 
 enum DefaultsKey: String {
     case userId
+    case isFirstRun
 }
 
 public enum EasyTracker: TrackServiceProtocol {
@@ -45,10 +46,6 @@ public enum EasyTracker: TrackServiceProtocol {
             ATTrackingManager.requestTrackingAuthorization { status in
                 sendData()
             }
-        }
-        
-        SwiftyStoreKit.restorePurchases(atomically: true) { results in
-            print("!@restorePurchase \(results.restoredPurchases)")
         }
 
         func sendData() {
@@ -108,17 +105,14 @@ public enum EasyTracker: TrackServiceProtocol {
         send(data, to: .trackPurchase)
     }
     
-    public static func trackAllPurchases() {
-//        let data: [String: String] = [
-//            TrackingKey.userId.rawValue: self.userId,
-//            TrackingKey.productId.rawValue: product.productIdentifier,
-//            TrackingKey.price.rawValue: product.price.stringValue,
-//            TrackingKey.currency.rawValue: product.priceLocale.currencyCode ?? "",
-//            TrackingKey.receipt.rawValue: receipt,
-//            TrackingKey.orderId.rawValue: orderId ?? "",
-//        ]
+    static func updatePurchases(of products: Set<SKProduct>) {
+        let isFirstRun: Bool = getFromDefaults(.isFirstRun) ?? true
         
-//        send(data, to: .trackAllPurchases)
+        if isFirstRun {
+            SwiftyStoreKit.restorePurchases(atomically: true) { results in
+                print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
+            }
+        }
     }
 }
 
