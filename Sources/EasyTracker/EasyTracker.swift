@@ -45,6 +45,9 @@ public enum EasyTracker: TrackServiceProtocol {
                 sendData()
             }
         }
+        
+        let purchaseDelegate = PurchaseDelegate()
+        SKPaymentQueue.default().add(purchaseDelegate)
 
         func sendData() {
             let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
@@ -142,6 +145,14 @@ extension EasyTracker {
 
     static private func getFromDefaults<T>(_ key: DefaultsKey) -> T? {
         return UserDefaults.standard.value(forKey: key.rawValue) as? T
+    }
+}
+
+fileprivate final class PurchaseDelegate: NSObject, SKPaymentQueueDelegate {
+    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+        for transaction in transactions {
+            print("!@transactions: \(transaction)")
+        }
     }
 }
 
