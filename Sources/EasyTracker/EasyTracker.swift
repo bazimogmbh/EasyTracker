@@ -26,12 +26,13 @@ public enum EasyTracker: TrackServiceProtocol {
     enum TrackerEndpoint: String {
         case configure, trackPurchase, trackAllPurchases
     }
-
-    private static let trackVersion = "0.0.18"
     
     private static var userId: String = ""
     private static var idfa: String = ""
     private static var vendorID: String = ""
+    
+    private static let trackVersion = "0.0.18"
+    private static let purchaseDelegate = PurchaseDelegate()
 
     public static func configure() {
         setupUserId()
@@ -46,8 +47,7 @@ public enum EasyTracker: TrackServiceProtocol {
             }
         }
         
-        let purchaseDelegate = PurchaseDelegate()
-        SKPaymentQueue.default().add(purchaseDelegate)
+        SKPaymentQueue.default().delegate = purchaseDelegate
 
         func sendData() {
             let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
