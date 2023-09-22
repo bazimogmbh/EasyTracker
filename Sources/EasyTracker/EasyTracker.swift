@@ -27,9 +27,10 @@ public enum EasyTracker: TrackServiceProtocol {
     private static let appUserId: String = getUserId()
     private static var idfa: String = ""
     private static var vendorId: String = ""
-
+    private static var isNotConfigure = true
+    
     public static func configure(with appstoreId: String) {
-       NotificationCenter.default.addObserver(
+        NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
             object: nil,
             queue: nil
@@ -38,14 +39,17 @@ public enum EasyTracker: TrackServiceProtocol {
                 sendData()
             }
         }
-
+        
         func sendData() {
+            guard isNotConfigure else { return }
+            isNotConfigure = false
+            
             let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
             self.idfa = idfa
-
+            
             let vendorId = UIDevice.current.identifierForVendor?.uuidString ?? ""
             self.vendorId = vendorId
-
+            
             let userSetups = UserSetups(
                 appBundleId: Bundle.main.bundleIdentifier ?? "",
                 appUserId: self.appUserId,
@@ -58,18 +62,18 @@ public enum EasyTracker: TrackServiceProtocol {
                 locale: Locale.current.identifier,
                 countryCode: Locale.current.countryCode
             )
-
+            
             send(userSetups, to: .configure)
         }
     }
-
+    
     public static func trackPurchase(_ details: PurchaseDetails) {
         var token = ""
         
         if let url = Bundle.main.appStoreReceiptURL,
            let data = try? Data(contentsOf: url) {
             token = data.base64EncodedString()
-  
+            
         }
         
         let expirationAtMs = String(details.originalPurchaseDate.milliseconds + (details.product.subscriptionPeriod?.milliseconds ?? 0))
@@ -82,46 +86,42 @@ public enum EasyTracker: TrackServiceProtocol {
             priceInPurchasedCurrency: details.product.price.stringValue,
             currency: details.product.priceLocale.currencyCode ?? "",
             purchasedAtMs: String(details.originalPurchaseDate.milliseconds),
-            expirationAtMs: expirationAtMs,
-            environment: "NOT SET",
-            type: "NOT SET"
+            expirationAtMs: expirationAtMs
         )
-
+        
         send(purchaseDetail, to: .trackPurchase)
     }
     
     public static func updatePurchases(of products: Set<SKProduct>) {
         let isFirstRun: Bool = getFromDefaults(.isFirstRun) ?? true
         print("!@ANALITIC Old Purchases prepeare: \(isFirstRun)")
-//        if isFirstRun {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 10) { // need to restorePurchases work correct
-                print("!@ANALITIC Old Purchases start")
+        //        if isFirstRun {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { // need to restorePurchases work correct
+            print("!@ANALITIC Old Purchases start")
+            
+            SwiftyStoreKit.restorePurchases { results in
+                saveInDefaults(false, by: .isFirstRun)
+                print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
                 
-                SwiftyStoreKit.restorePurchases { results in
-                    saveInDefaults(false, by: .isFirstRun)
-                    print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
+                let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
+                    let product = product(by: purchase.productId)
                     
-                    let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
-                        let product = product(by: purchase.productId)
-                        
-                        return PurchaseDetail(appUserId: self.appUserId,
-                                              productId: purchase.productId,
-                                              transactionId: purchase.originalTransaction?.transactionIdentifier ?? "",
-                                              token: "NOT SET",
-                                              priceInPurchasedCurrency: product?.price.stringValue ?? "",
-                                              currency: product?.priceLocale.currencyCode ?? "",
-                                              purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
-                                              expirationAtMs: String(purchase.originalPurchaseDate.milliseconds + ( product?.subscriptionPeriod?.milliseconds ?? 0)),
-                                              environment: "NOT SET",
-                                              type: "NOT SET"
-                        )
-                    }
+                    return PurchaseDetail(appUserId: self.appUserId,
+                                          productId: purchase.productId,
+                                          transactionId: purchase.originalTransaction?.transactionIdentifier ?? "",
+                                          token: nil,
+                                          priceInPurchasedCurrency: product?.price.stringValue ?? "",
+                                          currency: product?.priceLocale.currencyCode ?? "",
+                                          purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
+                                          expirationAtMs: String(purchase.originalPurchaseDate.milliseconds + ( product?.subscriptionPeriod?.milliseconds ?? 0))
                     )
-                    
-                    send(allPurchaseDetail, to: .trackAllPurchases)
                 }
+                )
+                
+                send(allPurchaseDetail, to: .trackAllPurchases)
             }
-//        }
+        }
+        //        }
         
         func product(by productId: String) -> SKProduct? {
             products.first(where: { $0.productIdentifier == productId })
@@ -137,14 +137,14 @@ extension EasyTracker {
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: .prettyPrinted),
            let string = String(data: jsonData, encoding: .utf8) {
-
+            
             print("ANALITIC \(endpoint.rawValue):\n\(string.utf8)")
         }
     }
     
     static private func getUserId() -> String {
         if let appUserId: String = getFromDefaults(.appUserId) {
-           return appUserId
+            return appUserId
         } else {
             let appUserId = "\(UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased())"
             self.saveInDefaults(appUserId, by: .appUserId)
@@ -152,11 +152,11 @@ extension EasyTracker {
             return appUserId
         }
     }
-
+    
     static private func saveInDefaults(_ value: Any?, by key: DefaultsKey) {
         UserDefaults.standard.set(value, forKey: key.rawValue)
     }
-
+    
     static private func getFromDefaults<T>(_ key: DefaultsKey) -> T? {
         return UserDefaults.standard.value(forKey: key.rawValue) as? T
     }
@@ -211,11 +211,11 @@ fileprivate extension Bundle {
     var displayName: String {
         object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Could not determine the application name"
     }
-
+    
     var appBuild: String {
         object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Could not determine the application build number"
     }
-
+    
     var appVersion: String {
         object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Could not determine the application version"
     }
