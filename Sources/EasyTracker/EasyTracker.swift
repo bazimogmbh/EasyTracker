@@ -76,7 +76,13 @@ public enum EasyTracker: TrackServiceProtocol {
             
         }
         
-        let expirationAtMs = String(details.originalPurchaseDate.milliseconds + (details.product.subscriptionPeriod?.milliseconds ?? 0))
+        let expirationAtMs: String = {
+            if let subscriptionPeriod = details.product.subscriptionPeriod?.milliseconds {
+                return String(details.originalPurchaseDate.milliseconds + subscriptionPeriod)
+            }
+                
+            return "0"
+        }()
         
         let purchaseDetail = PurchaseDetail(
             appUserId: self.appUserId,
@@ -105,6 +111,13 @@ public enum EasyTracker: TrackServiceProtocol {
                 
                 let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
                     let product = product(by: purchase.productId)
+                    let expirationAtMs: String = {
+                        if let subscriptionPeriod = details.product.subscriptionPeriod?.milliseconds {
+                            return String(details.originalPurchaseDate.milliseconds + subscriptionPeriod)
+                        }
+                            
+                        return "0"
+                    }()
                     
                     return PurchaseDetail(appUserId: self.appUserId,
                                           productId: purchase.productId,
@@ -113,7 +126,7 @@ public enum EasyTracker: TrackServiceProtocol {
                                           priceInPurchasedCurrency: product?.price.stringValue ?? "",
                                           currency: product?.priceLocale.currencyCode ?? "",
                                           purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
-                                          expirationAtMs: String(purchase.originalPurchaseDate.milliseconds + ( product?.subscriptionPeriod?.milliseconds ?? 0))
+                                          expirationAtMs: expirationAtMs
                     )
                 }
                 )
@@ -169,7 +182,7 @@ fileprivate extension Date {
 }
 
 fileprivate extension SKProductSubscriptionPeriod {
-    var milliseconds: Int64 {
+    var milliseconds: Int64? {
         let milisecondsInDay: Double = 24 * 60 * 60 * 1000
         var result: Double = 0
         
@@ -183,7 +196,7 @@ fileprivate extension SKProductSubscriptionPeriod {
         case .year:
             result = TimeInterval(self.numberOfUnits) * 365 * milisecondsInDay
         @unknown default:
-            result = 0
+            return nil
         }
         
         return Int64(result)
