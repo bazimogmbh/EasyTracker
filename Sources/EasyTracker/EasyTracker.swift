@@ -112,7 +112,7 @@ public enum EasyTracker: TrackServiceProtocol {
                 let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
                     let product = product(by: purchase.productId)
                     let expirationAtMs: String = {
-                        if let subscriptionPeriod = product.subscriptionPeriod?.milliseconds {
+                        if let subscriptionPeriod = product?.subscriptionPeriod?.milliseconds {
                             return String(purchase.originalPurchaseDate.milliseconds + subscriptionPeriod)
                         }
                             
