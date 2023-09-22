@@ -15,7 +15,7 @@ struct PurchaseDetail: DictionaryConvertable {
     let priceInPurchasedCurrency: String
     let currency: String
     let purchasedAtMs: String
-    let expirationAtMs: String
+    let expirationAtMs: String?
 }
 
 struct AllPurchaseDetail: DictionaryConvertable {
