@@ -10,7 +10,7 @@ import UIKit
 
 protocol TrackServiceProtocol {
     static func configure(with appstoreId: String)
-    static func trackPurchase(_ details: PurchaseDetails)
+    static func trackPurchase(_ details: PurchaseDetails, with info: ReceiptInfo?)
     static func updatePurchases(of products: Set<SKProduct>)
 }
 
@@ -67,35 +67,40 @@ public enum EasyTracker: TrackServiceProtocol {
         }
     }
     
-    public static func trackPurchase(_ details: PurchaseDetails) {
-        var token = ""
+    public static func trackPurchase(_ details: PurchaseDetails, with info: ReceiptInfo?) {
+        guard let info else { return }
         
-        if let url = Bundle.main.appStoreReceiptURL,
-           let data = try? Data(contentsOf: url) {
-            token = data.base64EncodedString()
-            
-        }
-        
-        let expirationAtMs: String? = {
-            if let subscriptionPeriod = details.product.subscriptionPeriod?.milliseconds {
-                return String(details.originalPurchaseDate.milliseconds + subscriptionPeriod)
-            }
+        let result = SwiftyStoreKit.verifyPurchase(productId: details.productId, inReceipt: info)
+            if case .purchased(let item) = result {
+                var token = ""
                 
-            return nil
-        }()
-        
-        let purchaseDetail = PurchaseDetail(
-            appUserId: self.appUserId,
-            productId: details.product.productIdentifier,
-            transactionId: details.transaction.transactionIdentifier ?? "",
-            token: token,
-            priceInPurchasedCurrency: details.product.price.stringValue,
-            currency: details.product.priceLocale.currencyCode ?? "",
-            purchasedAtMs: String(details.originalPurchaseDate.milliseconds),
-            expirationAtMs: expirationAtMs
-        )
-        
-        send(purchaseDetail, to: .trackPurchase)
+                if let url = Bundle.main.appStoreReceiptURL,
+                   let data = try? Data(contentsOf: url) {
+                    token = data.base64EncodedString()
+                    
+                }
+
+                let expirationAtMs: String? = {
+                    if let expirationDate = item.subscriptionExpirationDate {
+                        return String(expirationDate.milliseconds)
+                    }
+
+                    return nil
+                }()
+                
+                let purchaseDetail = PurchaseDetail(
+                    appUserId: self.appUserId,
+                    productId: details.product.productIdentifier,
+                    transactionId: details.transaction.transactionIdentifier ?? "",
+                    token: token,
+                    priceInPurchasedCurrency: details.product.price.stringValue,
+                    currency: details.product.priceLocale.currencyCode ?? "",
+                    purchasedAtMs: String(details.originalPurchaseDate.milliseconds),
+                    expirationAtMs: expirationAtMs
+                )
+                
+                send(purchaseDetail, to: .trackPurchase)
+        }
     }
     
     public static func updatePurchases(of products: Set<SKProduct>) {
@@ -134,7 +139,6 @@ public enum EasyTracker: TrackServiceProtocol {
                 send(allPurchaseDetail, to: .trackAllPurchases)
             }
         }
-        //        }
         
         func product(by productId: String) -> SKProduct? {
             products.first(where: { $0.productIdentifier == productId })
