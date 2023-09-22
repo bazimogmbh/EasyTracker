@@ -19,36 +19,6 @@ enum DefaultsKey: String {
     case isFirstRun
 }
 
-struct UserSetups: DictionaryConvertable {
-    let appBundleId: String
-    let appUserId: String
-    let idfa: String
-    let vendorId: String
-    let appVersion: String
-    let appstoreId: String
-    let iosVersion: String
-    let device: String
-    let locale: String
-    let countryCode: String
-}
-
-struct PurchaseDetail: DictionaryConvertable {
-    let appUserId: String
-    let productId: String
-    let transactionId: String
-    let token: String
-    let priceInPurchasedCurrency: String
-    let currency: String
-    let purchasedAtMs: String
-    let expirationAtMs: String
-    let environment: String
-    let type: String
-}
-
-struct AllPurchaseDetail: DictionaryConvertable {
-    let purchases: [PurchaseDetail]
-}
-
 public enum EasyTracker: TrackServiceProtocol {
     enum TrackerEndpoint: String {
         case configure, trackPurchase, trackAllPurchases
@@ -76,24 +46,17 @@ public enum EasyTracker: TrackServiceProtocol {
             let vendorId = UIDevice.current.identifierForVendor?.uuidString ?? ""
             self.vendorId = vendorId
 
-            let appBundleId = Bundle.main.bundleIdentifier ?? ""
-            let appVersion = Bundle.main.appVersion
-            let device = UIDevice.current.modelName
-            let iosVersion = UIDevice.current.systemVersion
-
-            let locale = Locale.current.identifier
-            let countryCode: String = Locale.current.countryCode
-            
-            let userSetups = UserSetups(appBundleId: appBundleId,
-                                        appUserId: self.appUserId,
-                                        idfa: idfa,
-                                        vendorId: vendorId,
-                                        appVersion: appVersion,
-                                        appstoreId: appstoreId,
-                                        iosVersion: iosVersion,
-                                        device: device,
-                                        locale: locale,
-                                        countryCode: countryCode
+            let userSetups = UserSetups(
+                appBundleId: Bundle.main.bundleIdentifier ?? "",
+                appUserId: self.appUserId,
+                idfa: idfa,
+                vendorId: vendorId,
+                appVersion: Bundle.main.appVersion,
+                appstoreId: appstoreId,
+                iosVersion: UIDevice.current.systemVersion,
+                device: UIDevice.current.modelName,
+                locale: Locale.current.identifier,
+                countryCode: Locale.current.countryCode
             )
 
             send(userSetups, to: .configure)
@@ -109,25 +72,19 @@ public enum EasyTracker: TrackServiceProtocol {
   
         }
         
-        let productId = details.product.productIdentifier
-        let transactionId = details.transaction.transactionIdentifier ?? ""
-        let priceInPurchasedCurrency = details.product.price.stringValue
-        let currency = details.product.priceLocale.currencyCode ?? ""
-        let purchasedAtMs = String(details.originalPurchaseDate.milliseconds)
         let expirationAtMs = String(details.originalPurchaseDate.milliseconds + (details.product.subscriptionPeriod?.milliseconds ?? 0))
-        let environment = "NOT SET"
-        let type = "NOT SET"
         
-        let purchaseDetail = PurchaseDetail(appUserId: self.appUserId,
-                       productId: productId,
-                       transactionId: transactionId,
-                       token: token,
-                       priceInPurchasedCurrency: priceInPurchasedCurrency,
-                       currency: currency,
-                       purchasedAtMs: purchasedAtMs,
-                       expirationAtMs: expirationAtMs,
-                       environment: environment,
-                       type: type
+        let purchaseDetail = PurchaseDetail(
+            appUserId: self.appUserId,
+            productId: details.product.productIdentifier,
+            transactionId: details.transaction.transactionIdentifier ?? "",
+            token: token,
+            priceInPurchasedCurrency: details.product.price.stringValue,
+            currency: details.product.priceLocale.currencyCode ?? "",
+            purchasedAtMs: String(details.originalPurchaseDate.milliseconds),
+            expirationAtMs: expirationAtMs,
+            environment: "NOT SET",
+            type: "NOT SET"
         )
 
         send(purchaseDetail, to: .trackPurchase)
@@ -275,70 +232,3 @@ fileprivate extension Locale {
 }
 
 #endif
-
-protocol DictionaryConvertable: DictionaryDecodable {
-    func toDictionary() -> [String: Any]
-}
-
-protocol DictionaryDecodable: Decodable {
-    static func decode(from dictionary: [AnyHashable: Any]) throws -> Self
-}
-
-extension DictionaryDecodable {
-    static func decode(from dictionary: [AnyHashable: Any]) throws -> Self {
-        let jsonData = try JSONSerialization.data(withJSONObject: dictionary, options: [])
-        let decoder = JSONDecoder()
-        let object = try decoder.decode(Self.self, from: jsonData)
-        return object
-    }
-}
-
-protocol EnumConvertable {
-    init?(rawValue: String)
-    var rawValue: String { get }
-}
-
-extension DictionaryConvertable {
-    func toDictionary() -> [String: Any] {
-        let reflect = Mirror(reflecting: self)
-        let children = reflect.children
-        let dictionary = toAnyHashable(elements: children)
-        return dictionary
-    }
-    
-    func toAnyHashable(elements: AnyCollection<Mirror.Child>) -> [String : Any] {
-        var dictionary: [String : Any] = [:]
-        for element in elements {
-            if let camelCaseKey = element.label {
-               let key = convertCamelCaseToSnakeCase(camelCaseKey)
-
-                if let collectionValidHashable = element.value as? [AnyHashable] {
-                    dictionary[key] = collectionValidHashable
-                }
-                
-                if let validHashable = element.value as? AnyHashable {
-                    dictionary[key] = validHashable
-                }
-                
-                if let convertor = element.value as? DictionaryConvertable {
-                    dictionary[key] = convertor.toDictionary()
-                }
-                
-                if let convertorList = element.value as? [DictionaryConvertable] {
-                    dictionary[key] = convertorList.map({ e in
-                       return e.toDictionary()
-                    })
-                }
-                
-                if let validEnum = element.value as? EnumConvertable {
-                    dictionary[key] = validEnum.rawValue
-                }
-            }
-        }
-        return dictionary
-        
-        func convertCamelCaseToSnakeCase(_ input: String) -> String {
-            return input.replacingOccurrences(of: "([a-z])([A-Z])", with: "$1_$2", options: .regularExpression, range: nil).lowercased()
-        }
-    }
-}

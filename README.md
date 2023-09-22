@@ -17,14 +17,12 @@ dependencies: [
 
 Initialize EasyTracker in your app's entry point:
 func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
     EasyTracker.configure()
+    
     return true
 }
 
 ## Tracking Purchases
 
 Use trackPurchase(detail:) to record purchase events:
-
-## License
-
-EasyTracker is available under the MIT License.
