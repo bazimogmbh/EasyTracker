@@ -106,37 +106,39 @@ public enum EasyTracker: TrackServiceProtocol {
     public static func updatePurchases(of products: Set<SKProduct>) {
         let isFirstRun: Bool = getFromDefaults(.isFirstRun) ?? true
         print("!@ANALITIC Old Purchases prepeare: \(isFirstRun)")
-        //        if isFirstRun {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { // need to restorePurchases work correct
-            print("!@ANALITIC Old Purchases start")
-            
-            SwiftyStoreKit.restorePurchases { results in
-                saveInDefaults(false, by: .isFirstRun)
-                print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
+        
+        if isFirstRun {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) { // need to restorePurchases work correct
+                print("!@ANALITIC Old Purchases start")
                 
-                let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
-                    let product = product(by: purchase.productId)
-                    let expirationAtMs: String? = {
-                        if let subscriptionPeriod = product?.subscriptionPeriod?.milliseconds {
-                            return String(purchase.originalPurchaseDate.milliseconds + subscriptionPeriod)
-                        }
-                            
-                        return nil
-                    }()
+                SwiftyStoreKit.restorePurchases { results in
+                    saveInDefaults(false, by: .isFirstRun)
+                    print("!@ANALITIC Old Purchases \(results.restoredPurchases)")
                     
-                    return PurchaseDetail(appUserId: self.appUserId,
-                                          productId: purchase.productId,
-                                          transactionId: purchase.originalTransaction?.transactionIdentifier ?? "",
-                                          token: nil,
-                                          priceInPurchasedCurrency: product?.price.stringValue ?? "",
-                                          currency: product?.priceLocale.currencyCode ?? "",
-                                          purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
-                                          expirationAtMs: expirationAtMs
+                    let allPurchaseDetail = AllPurchaseDetail(purchases: results.restoredPurchases.map { purchase in
+                        let product = product(by: purchase.productId)
+                        let expirationAtMs: String? = {
+                            if let subscriptionPeriod = product?.subscriptionPeriod?.milliseconds {
+                                return String(purchase.originalPurchaseDate.milliseconds + subscriptionPeriod)
+                            }
+                            
+                            return nil
+                        }()
+                        
+                        return PurchaseDetail(appUserId: self.appUserId,
+                                              productId: purchase.productId,
+                                              transactionId: purchase.originalTransaction?.transactionIdentifier ?? "",
+                                              token: nil,
+                                              priceInPurchasedCurrency: product?.price.stringValue ?? "",
+                                              currency: product?.priceLocale.currencyCode ?? "",
+                                              purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
+                                              expirationAtMs: expirationAtMs
+                        )
+                    }
                     )
+                    
+                    send(allPurchaseDetail, to: .trackAllPurchases)
                 }
-                )
-                
-                send(allPurchaseDetail, to: .trackAllPurchases)
             }
         }
         
