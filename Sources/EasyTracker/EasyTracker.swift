@@ -4,6 +4,7 @@ import AdSupport
 import Network
 import StoreKit
 import SwiftyStoreKit
+import AdServices
 
 #if canImport(UIKit)
 import UIKit
