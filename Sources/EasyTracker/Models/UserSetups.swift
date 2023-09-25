@@ -8,14 +8,17 @@
 import Foundation
 
 struct UserSetups: DictionaryConvertable {
-    let appBundleId: String
-    let appUserId: String
-    let idfa: String
-    let vendorId: String
-    let appVersion: String
-    let appstoreId: String
-    let iosVersion: String
-    let device: String
-    let locale: String
-    let countryCode: String
+    var attribution: Bool? = nil
+    var campaignId: String? = nil
+    var campaignRegion: String? = nil
+    let appBundleId: String?
+    let appUserId: String?
+    let idfa: String?
+    let vendorId: String?
+    let appVersion: String?
+    let appstoreId: String?
+    let iosVersion: String?
+    let device: String?
+    let locale: String?
+    let countryCode: String?
 }

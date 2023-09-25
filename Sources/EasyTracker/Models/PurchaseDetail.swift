@@ -8,14 +8,16 @@
 import Foundation
 
 struct PurchaseDetail: DictionaryConvertable {
-    let appUserId: String
-    let productId: String
-    let transactionId: String
+    let appBundleId: String?
+    let appUserId: String?
+    let productId: String?
+    let transactionId: String?
     let token: String?
-    let priceInPurchasedCurrency: String
-    let currency: String
-    let purchasedAtMs: String
+    let priceInPurchasedCurrency: String?
+    let currency: String?
+    let purchasedAtMs: String?
     let expirationAtMs: String?
+    let withTrial: Bool?
 }
 
 struct AllPurchaseDetail: DictionaryConvertable {

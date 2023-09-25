@@ -50,7 +50,7 @@ public enum EasyTracker: TrackServiceProtocol {
             let vendorId = UIDevice.current.identifierForVendor?.uuidString ?? ""
             self.vendorId = vendorId
             
-            let userSetups = UserSetups(
+            var userSetups = UserSetups(
                 appBundleId: Bundle.main.bundleIdentifier ?? "",
                 appUserId: self.appUserId,
                 idfa: idfa,
@@ -63,7 +63,12 @@ public enum EasyTracker: TrackServiceProtocol {
                 countryCode: Locale.current.countryCode
             )
             
-            send(userSetups, to: .configure)
+            handleAttribution { param in
+                userSetups.attribution = param?.attribution
+                userSetups.campaignId = param?.campaignId
+                userSetups.campaignRegion = param?.campaignRegion
+                send(userSetups, to: .configure)
+            }
         }
     }
     
@@ -71,35 +76,37 @@ public enum EasyTracker: TrackServiceProtocol {
         guard let info else { return }
         
         let result = SwiftyStoreKit.verifyPurchase(productId: details.productId, inReceipt: info)
-            if case .purchased(let item) = result {
-                var token = ""
+        if case .purchased(let item) = result {
+            var token = ""
+            
+            if let url = Bundle.main.appStoreReceiptURL,
+               let data = try? Data(contentsOf: url) {
+                token = data.base64EncodedString()
                 
-                if let url = Bundle.main.appStoreReceiptURL,
-                   let data = try? Data(contentsOf: url) {
-                    token = data.base64EncodedString()
-                    
+            }
+            
+            let expirationAtMs: String? = {
+                if let expirationDate = item.subscriptionExpirationDate {
+                    return String(expirationDate.milliseconds)
                 }
-
-                let expirationAtMs: String? = {
-                    if let expirationDate = item.subscriptionExpirationDate {
-                        return String(expirationDate.milliseconds)
-                    }
-
-                    return nil
-                }()
                 
-                let purchaseDetail = PurchaseDetail(
-                    appUserId: self.appUserId,
-                    productId: details.product.productIdentifier,
-                    transactionId: details.transaction.transactionIdentifier ?? "",
-                    token: token,
-                    priceInPurchasedCurrency: details.product.price.stringValue,
-                    currency: details.product.priceLocale.currencyCode ?? "",
-                    purchasedAtMs: String(details.originalPurchaseDate.milliseconds),
-                    expirationAtMs: expirationAtMs
-                )
-                
-                send(purchaseDetail, to: .trackPurchase)
+                return nil
+            }()
+            
+            let purchaseDetail = PurchaseDetail(
+                appBundleId: Bundle.main.bundleIdentifier ?? "",
+                appUserId: self.appUserId,
+                productId: details.product.productIdentifier,
+                transactionId: details.transaction.transactionIdentifier ?? "",
+                token: token,
+                priceInPurchasedCurrency: details.product.price.stringValue,
+                currency: details.product.priceLocale.currencyCode ?? "",
+                purchasedAtMs: String(details.originalPurchaseDate.milliseconds),
+                expirationAtMs: expirationAtMs,
+                withTrial: details.product.introductoryPrice != nil
+            )
+            
+            send(purchaseDetail, to: .trackPurchase)
         }
     }
     
@@ -125,14 +132,16 @@ public enum EasyTracker: TrackServiceProtocol {
                             return nil
                         }()
                         
-                        return PurchaseDetail(appUserId: self.appUserId,
+                        return PurchaseDetail(appBundleId: Bundle.main.bundleIdentifier ?? "",
+                                              appUserId: self.appUserId,
                                               productId: purchase.productId,
                                               transactionId: purchase.originalTransaction?.transactionIdentifier ?? "",
                                               token: nil,
                                               priceInPurchasedCurrency: product?.price.stringValue ?? "",
                                               currency: product?.priceLocale.currencyCode ?? "",
                                               purchasedAtMs: String(purchase.originalPurchaseDate.milliseconds),
-                                              expirationAtMs: expirationAtMs
+                                              expirationAtMs: expirationAtMs,
+                                              withTrial: product?.introductoryPrice != nil
                         )
                     }
                     )
@@ -144,6 +153,38 @@ public enum EasyTracker: TrackServiceProtocol {
         
         func product(by productId: String) -> SKProduct? {
             products.first(where: { $0.productIdentifier == productId })
+        }
+    }
+    
+   private static func handleAttribution(completion: @escaping ((attribution: Bool,
+                                                          campaignId: String,
+                                                          campaignRegion: String)?) -> Void) {
+        if let attributionToken = try? AAAttribution.attributionToken() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                let request = NSMutableURLRequest(url: URL(string:"https://api-adservices.apple.com/api/v1/")!)
+                request.httpMethod = "POST"
+                request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
+                request.httpBody = Data(attributionToken.utf8)
+                
+                let task = URLSession.shared.dataTask(with: request as URLRequest) { (data, response, error) in
+                    if let data,
+                       let result = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String:Any],
+                       let attribution = result["attribution"] as? Bool,
+                       let campaignId = result["campaignId"] as? Int,
+                       let countryOrRegion = result["countryOrRegion"] as? String,
+                       campaignId != 1234567890 {
+                        completion((attribution: attribution,
+                                    campaignId: "\(campaignId)",
+                                    campaignRegion: countryOrRegion))
+                    }
+                    
+                    completion(nil)
+                }
+                
+                task.resume()
+            }
+        } else {
+            completion(nil)
         }
     }
 }
