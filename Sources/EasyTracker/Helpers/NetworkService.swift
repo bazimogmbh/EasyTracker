@@ -28,7 +28,7 @@ enum NetworkService {
     
     static func send<T: DictionaryConvertable>(_ data: T, endpoint: TrackerEndpoint) {
         guard let url = baseUrl?.appendingPathComponent(endpoint.path) else {
-            print("ANALITIC ERROR in \(endpoint.rawValue): BadURL")
+            print("!@ANALITIC ERROR in \(endpoint.rawValue): BadURL")
             return
         }
         
@@ -42,25 +42,25 @@ enum NetworkService {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             
             if let string = String(data: jsonData, encoding: .utf8) {
-                print("ANALITIC \(endpoint.rawValue) data:\n \(string.utf8)")
+                print("!@ANALITIC \(endpoint.rawValue) data:\n \(string.utf8)")
             }
             
             let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
                 if let error = error {
-                    print("ANALITIC ERROR in \(endpoint.rawValue): \(error.localizedDescription)")
+                    print("!@ANALITIC ERROR in \(endpoint.rawValue): \(error.localizedDescription)")
                 }
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     let statusCode = httpResponse.statusCode
-                    print("ANALITIC \(endpoint.rawValue) status code: \(statusCode)")
+                    print("!@ANALITIC \(endpoint.rawValue) status code: \(statusCode)")
                 } else {
-                    print("ANALITIC ERROR in \(endpoint.rawValue): No status code")
+                    print("!@ANALITIC ERROR in \(endpoint.rawValue): No status code")
                 }
             }
             
             task.resume()
         } catch {
-            print("ANALITIC ERROR in \(endpoint.rawValue): \(error.localizedDescription)")
+            print("!@ANALITIC ERROR in \(endpoint.rawValue): \(error.localizedDescription)")
         }
     }
 }
