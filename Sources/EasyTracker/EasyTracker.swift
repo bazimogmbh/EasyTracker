@@ -21,10 +21,6 @@ enum DefaultsKey: String {
 }
 
 public enum EasyTracker: TrackServiceProtocol {
-    enum TrackerEndpoint: String {
-        case configure, trackPurchase, trackAllPurchases
-    }
-    
     private static let appUserId: String = getUserId()
     private static var idfa: String = ""
     private static var vendorId: String = ""
@@ -193,14 +189,8 @@ public enum EasyTracker: TrackServiceProtocol {
 // MARK: - Helpers
 
 extension EasyTracker {
-    static private func send<T: DictionaryConvertable>(_ data: T, to endpoint: TrackerEndpoint) {
-        let dictionary = data.toDictionary()
-        
-        if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: .prettyPrinted),
-           let string = String(data: jsonData, encoding: .utf8) {
-            
-            print("ANALITIC \(endpoint.rawValue):\n\(string.utf8)")
-        }
+    static private func send<T: DictionaryConvertable>(_ data: T, to endpoint: NetworkService.TrackerEndpoint) {
+        NetworkService.send(data, endpoint: endpoint)
     }
     
     static private func getUserId() -> String {
