@@ -155,7 +155,8 @@ public enum EasyTracker: TrackServiceProtocol {
     
    private static func handleAttribution(completion: @escaping ((attribution: Bool,
                                                           campaignId: String,
-                                                          campaignRegion: String)?) -> Void) {
+                                                          campaignRegion: String)?) -> Void
+   ) {
         if let attributionToken = try? AAAttribution.attributionToken() {
             DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
                 let request = NSMutableURLRequest(url: URL(string:"https://api-adservices.apple.com/api/v1/")!)
