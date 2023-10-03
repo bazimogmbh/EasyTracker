@@ -157,33 +157,41 @@ public enum EasyTracker: TrackServiceProtocol {
                                                           campaignId: String,
                                                           campaignRegion: String)?) -> Void
    ) {
-        if let attributionToken = try? AAAttribution.attributionToken() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-                let request = NSMutableURLRequest(url: URL(string:"https://api-adservices.apple.com/api/v1/")!)
-                request.httpMethod = "POST"
-                request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
-                request.httpBody = Data(attributionToken.utf8)
-                
-                let task = URLSession.shared.dataTask(with: request as URLRequest) { (data, response, error) in
-                    if let data,
-                       let result = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String:Any],
-                       let attribution = result["attribution"] as? Bool,
-                       let campaignId = result["campaignId"] as? Int,
-                       let countryOrRegion = result["countryOrRegion"] as? String,
-                       campaignId != 1234567890 {
-                        completion((attribution: attribution,
-                                    campaignId: "\(campaignId)",
-                                    campaignRegion: countryOrRegion))
-                    }
-                    
-                    completion(nil)
-                }
-                
-                task.resume()
-            }
-        } else {
-            completion(nil)
-        }
+#if targetEnvironment(simulator)
+       completion(nil)
+#else
+       getAttribution()
+#endif
+       
+       func getAttribution() {
+           if let attributionToken = try? AAAttribution.attributionToken() {
+               DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                   let request = NSMutableURLRequest(url: URL(string:"https://api-adservices.apple.com/api/v1/")!)
+                   request.httpMethod = "POST"
+                   request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
+                   request.httpBody = Data(attributionToken.utf8)
+                   
+                   let task = URLSession.shared.dataTask(with: request as URLRequest) { (data, response, error) in
+                       if let data,
+                          let result = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String:Any],
+                          let attribution = result["attribution"] as? Bool,
+                          let campaignId = result["campaignId"] as? Int,
+                          let countryOrRegion = result["countryOrRegion"] as? String,
+                          campaignId != 1234567890 {
+                           completion((attribution: attribution,
+                                       campaignId: "\(campaignId)",
+                                       campaignRegion: countryOrRegion))
+                       }
+                       
+                       completion(nil)
+                   }
+                   
+                   task.resume()
+               }
+           } else {
+               completion(nil)
+           }
+       }
     }
 }
 
