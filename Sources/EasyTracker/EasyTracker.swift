@@ -76,12 +76,12 @@ public enum EasyTracker: TrackServiceProtocol {
         if case .purchased(let item) = result {
             var token = ""
             
-            if let url = Bundle.main.appStoreReceiptURL,
-               let data = try? Data(contentsOf: url) {
+            if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
+               FileManager.default.fileExists(atPath: appStoreReceiptURL.path),
+               let data = try? Data(contentsOf: appStoreReceiptURL, options: .alwaysMapped) {
                 token = data.base64EncodedString()
-                
             }
-            
+        
             let expirationAtMs: String? = {
                 if let expirationDate = item.subscriptionExpirationDate {
                     return String(expirationDate.milliseconds)
