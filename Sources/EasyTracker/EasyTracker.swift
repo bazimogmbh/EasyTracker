@@ -36,6 +36,8 @@ public enum EasyTracker: TrackServiceProtocol {
                 ATTrackingManager.requestTrackingAuthorization { status in
                     sendData()
                 }
+            } else {
+                sendData()
             }
         }
         
