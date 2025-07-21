@@ -66,8 +66,12 @@ public enum EasyTracker: TrackServiceProtocol {
             
             handleAttribution { records in
                 userSetups.attribution = records?.attribution
-                userSetups.campaignId = records?.campaignId
-                userSetups.campaignRegion = records?.campaignRegion
+                
+                if let campaignId = records?.campaignId {
+                    userSetups.campaignId = String(campaignId)
+                }
+                
+                userSetups.campaignRegion = records?.countryOrRegion
                 userSetups.attributionRecords = records
                 send(userSetups, to: .configure)
             }

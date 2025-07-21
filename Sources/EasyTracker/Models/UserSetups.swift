@@ -22,7 +22,7 @@ struct UserSetups: DictionaryConvertable {
     let locale: String?
     let countryCode: String?
     
-    let attributionRecords: AttributionRecords?
+    var attributionRecords: AttributionRecords? = nil
 }
 
 extension UserSetups {
