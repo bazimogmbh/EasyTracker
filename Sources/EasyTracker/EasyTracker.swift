@@ -158,7 +158,7 @@ public enum EasyTracker: TrackServiceProtocol {
         }
     }
     
-    private static func handleAttribution(completion: @escaping (AttributionRecords?) -> Void
+    private static func handleAttribution(completion: @escaping (UserSetups.AttributionRecords?) -> Void
     ) {
 #if targetEnvironment(simulator)
         completion(nil)
@@ -185,7 +185,7 @@ public enum EasyTracker: TrackServiceProtocol {
                         decoder.keyDecodingStrategy = .useDefaultKeys
                         
                         if let data,
-                           let result = try decoder.decode(UserSetups.AttributionRecords.self, from: data),
+                           let result = try? decoder.decode(UserSetups.AttributionRecords.self, from: data),
                            result.campaignId != 1234567890 {
                             completion(result)
                             return
